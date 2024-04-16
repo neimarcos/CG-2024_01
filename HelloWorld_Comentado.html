@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>Hello World (Three.js)</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel=stylesheet href="css/base.css"/>
+</head>
+<body>
+
+<script src="js/Three.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/Stats.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/THREEx.KeyboardState.js"></script>
+<script src="js/THREEx.FullScreen.js"></script>
+<script src="js/THREEx.WindowResize.js"></script>
+
+<!-- Código jQuery para exibir um botão de informações e uma caixa quando clicado. 
+
+<script src="js/jquery-1.9.1.js"></script>
+<script src="js/jquery-ui.js"></script>
+<link rel=stylesheet href="css/jquery-ui.css" />
+<link rel=stylesheet href="css/info.css"/>
+<script src="js/info.js"></script>
+<div id="infoButton"></div>
+<div id="infoBox" title="Informações da Demonstração">
+Esta demonstração three.js faz parte de uma coleção em
+<a href="http://stemkoski.github.io/Three.js/">http://stemkoski.github.io/Three.js/</a>
+
+</div> -->
+
+<!-- ------------------------------------------------------------ -->
+
+<div id="ThreeJS" style="z-index: 1; position: absolute; left:0px; top:0px"></div>
+
+<script>
+/*
+	"Tutoriais por Exemplo" do Three.js
+	Autor: Lee Stemkoski
+	Data: Julho de 2013 (three.js v59dev)
+ */
+
+	
+//////////	
+// PRINCIPAL //
+//////////
+
+// Variáveis globais padrão
+var container, scene, camera, renderer, controls, stats;
+var keyboard = new THREEx.KeyboardState();
+var clock = new THREE.Clock();
+
+// Variáveis globais personalizadas
+var cube, sphere;
+
+// inicialização
+init();
+
+// laço de animação / loop do jogo
+animate();
+
+///////////////
+// FUNÇÕES //
+///////////////
+			
+function init() 
+{
+	///////////
+	// CENA //
+	///////////
+	scene = new THREE.Scene();
+
+	////////////
+	// CÂMERA //
+	////////////
+	
+	// definir o tamanho da visualização em pixels (personalizado ou de acordo com o tamanho da janela)
+	// var SCREEN_WIDTH = 400, SCREEN_HEIGHT = 300;
+	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;	
+	// atributos da câmera
+	var VIEW_ANGLE = 45 , ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	// configurar a câmera
+	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+	// adicionar a câmera à cena
+	scene.add(camera);
+	// a câmera padrão está na posição (0,0,0)
+	// 	então mova para trás (z = 400) e para cima (y = 100) e defina o ângulo em direção à origem da cena
+	camera.position.set(0,150,400);
+	camera.lookAt(scene.position);	
+	
+	//////////////
+	// RENDERIZADOR //
+	//////////////
+	
+	// criar e iniciar o renderizador; escolher configuração antialias.
+	if ( Detector.webgl )
+		renderer = new THREE.WebGLRenderer( {antialias:true} );
+	else
+		renderer = new THREE.CanvasRenderer(); 
+	
+	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	
+	// anexar elemento div à variável para conter o renderizador
+	container = document.getElementById( 'ThreeJS' );
+	// alternativamente: para criar a div durante a execução, use:
+	//   container = document.createElement( 'div' );
+	//    document.body.appendChild( container );
+	
+	// anexar renderizador ao elemento div de contêiner
+	container.appendChild( renderer.domElement );
+	
+	////////////
+	// EVENTOS //
+	////////////
+
+	// redimensionar automaticamente o renderizador
+	THREEx.WindowResize(renderer, camera);
+	// alternar tela cheia na tecla pressionada
+	THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+	
+	//////////////
+	// CONTROLES //
+	//////////////
+
+	// mover o mouse e: clique esquerdo para girar, 
+	//                 clique do meio para ampliar, 
+	//                 clique direito para panorâmica
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	
+	///////////
+	// ESTATÍSTICAS //
+	///////////
+	
+	// exibe o número de quadros por segundo atual e anteriores alcançados pela cena
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.bottom = '0px';
+	stats.domElement.style.zIndex = 200;
+	container.appendChild( stats.domElement );
+	
+	///////////
+	// LUZ //
+	///////////
+	
+	// criar uma luz
+	var light = new THREE.PointLight(0x00ffff);
+	light.position.set(100,100,100);
+	scene.add(light);
+	//var ambientLight = new THREE.AmbientLight(0x111111);
+	//scene.add(ambientLight);
+	
+	//////////////
+	// GEOMETRIA //
+	//////////////
+		
+	// a maioria dos objetos exibidos é um "mesh":
+	//  uma coleção de pontos ("geometria") e
+	//  um conjunto de parâmetros de superfície ("material")	
+
+	// Parâmetros da esfera: raio, segmentos ao longo da largura, segmentos ao longo da altura
+	var sphereGeometry = new THREE.SphereGeometry( 50, 32, 16 ); 
+	// use um material "lambert" em vez de "basic" para iluminação realista.
+	//   (não se esqueça de adicionar (pelo menos uma) luz!)
+	var sphereMaterial = new THREE.MeshLambertMaterial( {color: 0x8888ff} ); 
+	sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+	sphere.position.set(100, 50, -50);
+	scene.add(sphere);
+	
+    // Criar uma esfera pequena
+    var sphereIluminacaoGeometry = new THREE.SphereGeometry( 5, 16, 16 ); // Raio de 5 unidades
+    var sphereIluminacaoMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } ); // Amarelo
+    var sphereIluminacao = new THREE.Mesh( sphereIluminacaoGeometry, sphereIluminacaoMaterial );
+    scene.add( sphereIluminacao );
+
+    // Definir a posição da esfera para ser a mesma que a posição da luz
+    sphereIluminacao.position.copy( light.position );
+
+
+	// Crie uma matriz de materiais a serem usados em um cubo, um para cada lado
+	var cubeMaterialArray = [];
+	// ordem para adicionar materiais: x+, x-, y+, y-, z+, z-
+	cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff3333 } ) );
+	cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff8800 } ) );
+	cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xffff33 } ) );
+	cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x33ff33 } ) );
+	cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x3333ff } ) );
+	cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x8833ff } ) );
+	var cubeMaterials = new THREE.MeshFaceMaterial( cubeMaterialArray );
+	// Parâmetros do cubo: largura (x), altura (y), profundidade (z), 
+	//        (opcional) segmentos ao longo de x, segmentos ao longo de y, segmentos ao longo de z
+	var cubeGeometry = new THREE.CubeGeometry( 100, 100, 100, 1, 1, 1 );
+	// usando THREE.MeshFaceMaterial() no construtor abaixo
+	//   faz com que o mesh use os materiais armazenados na geometria
+	cube = new THREE.Mesh( cubeGeometry, cubeMaterials );
+	cube.position.set(-100, 50, -50);
+	scene.add( cube );		
+
+	// criar um conjunto de eixos de coordenadas para ajudar a orientar o usuário
+	//    especificar comprimento em pixels em cada direção
+	var axes = new THREE.AxisHelper(100);
+	scene.add( axes );
+	
+	///////////
+	// CHÃO //
+	///////////
+	
+	// observe: padrão de tabuleiro de xadrez 4x4 escalado para que cada quadrado tenha 25 por 25 pixels.
+	var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+	floorTexture.repeat.set( 10, 10 );
+	// DoubleSide: renderizar textura em ambos os lados do mesh
+	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -0.5;
+	floor.rotation.x = Math.PI / 2;
+	scene.add(floor);
+	
+	/////////
+	// CÉU //
+	/////////
+	
+	// recomendar um skybox ou efeito de nevoeiro (não pode usar ambos ao mesmo tempo) 
+	// sem um desses, a cor de fundo da cena é determinada pela cor de fundo da página da web
+
+	// certifique-se de que o valor "longe" da câmera seja grande o suficiente para que renderize o skyBox!
+	var skyBoxGeometry = new THREE.CubeGeometry( 10000, 10000, 10000 );
+	// BackSide: renderizar faces de dentro do cubo, em vez de fora (padrão).
+	var skyBoxMaterial = new THREE.MeshBasicMaterial( { color: 0x9999ff, side: THREE.BackSide } );
+	var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
+	// scene.add(skyBox);
+	
+	// nevoeiro deve ser adicionado à cena antes do primeiro render
+	scene.fog = new THREE.FogExp2( 0x9999ff, 0.00025 );
+}
+
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();		
+	update();
+}
+
+function update()
+{
+	// delta = mudança no tempo desde a última chamada (em segundos)
+	var delta = clock.getDelta(); 
+
+	// funcionalidade fornecida porss THREEx.KeyboardState.js
+	if ( keyboard.pressed("up") )
+        cube.position.y += 0.5;
+    if ( keyboard.pressed("down") )
+        cube.position.y -= 0.5;
+	if ( keyboard.pressed("left") )
+        cube.position.x -= 0.5;
+    if ( keyboard.pressed("right") )
+        cube.position.x += 0.5;
+    
+        // funcionalidade fornecida por THREEx.KeyboardState.js
+	if ( keyboard.pressed("w") )
+        sphere.position.y += 0.5;
+    if ( keyboard.pressed("s") )
+        sphere.position.y -= 0.5;
+	if ( keyboard.pressed("a") )
+        sphere.position.x -= 0.5;
+    if ( keyboard.pressed("d") )
+        sphere.position.x += 0.5;
+
+	controls.update();
+	stats.update();
+}
+
+function render() 
+{	
+	renderer.render( scene, camera );
+}
+  
+</script>
+
+</body>
+</html>
